@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { SCENE_TAIL, type SceneMeta } from '../data/scenes'
+import { sceneLength, type SceneMeta } from '../data/scenes'
 
 export type NarrationMode = 'audio' | 'speech' | 'silent'
 
@@ -30,6 +30,7 @@ export function useGuidedPlayback({ scene, playing, soundOn, onComplete }: Optio
   const elapsedRef = useRef(0)
   const completeRef = useRef(onComplete)
   const speechStarted = useRef(false)
+  const [seekCount, setSeekCount] = useState(0)
 
   useEffect(() => {
     completeRef.current = onComplete
@@ -70,12 +71,20 @@ export function useGuidedPlayback({ scene, playing, soundOn, onComplete }: Optio
     if (!playing) return
     let frame = 0
     let last = performance.now()
-    const total = scene.duration + SCENE_TAIL
+    const total = sceneLength(scene)
+    let sinceSync = 0
     const tick = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.25)
       last = now
       elapsedRef.current = Math.min(elapsedRef.current + dt, total)
       setClock({ id: scene.id, t: elapsedRef.current })
+      // Keep the recorded voice on the same clock as the captions and timeline.
+      sinceSync += dt
+      const audio = audioRef.current
+      if (sinceSync > 1 && audio && !audio.paused && elapsedRef.current < scene.duration) {
+        sinceSync = 0
+        if (Math.abs(audio.currentTime - elapsedRef.current) > 0.6) elapsedRef.current = audio.currentTime
+      }
       if (elapsedRef.current >= total) {
         completeRef.current()
         return
@@ -100,7 +109,7 @@ export function useGuidedPlayback({ scene, playing, soundOn, onComplete }: Optio
     } else {
       audio.pause()
     }
-  }, [playing, soundOn, scene, mode])
+  }, [playing, soundOn, scene, mode, seekCount])
 
   // Browser speech fallback.
   useEffect(() => {
@@ -138,7 +147,21 @@ export function useGuidedPlayback({ scene, playing, soundOn, onComplete }: Optio
     if (audioRef.current) audioRef.current.currentTime = 0
   }, [scene.id])
 
-  return { elapsed, mode, restart }
+  /** Jump to `t` seconds inside the current scene. */
+  const seek = useCallback(
+    (t: number) => {
+      const v = Math.min(Math.max(t, 0), sceneLength(scene) - 0.05)
+      elapsedRef.current = v
+      setClock({ id: scene.id, t: v })
+      if (audioRef.current) audioRef.current.currentTime = Math.min(v, scene.duration)
+      if (speechAvailable()) window.speechSynthesis.cancel()
+      speechStarted.current = v >= scene.duration
+      setSeekCount((n) => n + 1)
+    },
+    [scene],
+  )
+
+  return { elapsed, mode, restart, seek }
 }
 
 /** Splits narration into sentences and returns the one being spoken at `elapsed`. */

@@ -1,7 +1,9 @@
-import { LogOut, X } from 'lucide-react'
+import { ChevronRight, Info, Leaf, Lightbulb, LogOut, X } from 'lucide-react'
+import { useState } from 'react'
+import { QUICK_TIPS } from '../data/content'
 import { SCENES } from '../data/scenes'
-import { Logo } from './Logo'
 import { SCENE_ICONS } from './icons'
+import { Logo } from './Logo'
 
 interface Props {
   current: number
@@ -10,10 +12,41 @@ interface Props {
   visitorName: string
   onSelect: (index: number) => void
   onClose: () => void
+  onAbout: () => void
   onSignOut: () => void
 }
 
-export function Sidebar({ current, visited, open, visitorName, onSelect, onClose, onSignOut }: Props) {
+function QuickTip() {
+  const [i, setI] = useState(0)
+  const [open, setOpen] = useState(true)
+  if (!open) {
+    return (
+      <button className="tip-reopen" onClick={() => setOpen(true)}>
+        <Lightbulb size={16} aria-hidden="true" /> Show quick tips
+      </button>
+    )
+  }
+  return (
+    <aside className="quick-tip" aria-label="Quick tip" aria-live="polite">
+      <div className="qt-head">
+        <span>
+          <Lightbulb size={15} aria-hidden="true" /> Quick Tip
+        </span>
+        <span>
+          <button className="icon-btn tiny" onClick={() => setI((i + 1) % QUICK_TIPS.length)} aria-label="Next tip">
+            <ChevronRight size={16} />
+          </button>
+          <button className="icon-btn tiny" onClick={() => setOpen(false)} aria-label="Close quick tips">
+            <X size={15} />
+          </button>
+        </span>
+      </div>
+      <p key={i}>{QUICK_TIPS[i]}</p>
+    </aside>
+  )
+}
+
+export function Sidebar({ current, visited, open, visitorName, onSelect, onClose, onAbout, onSignOut }: Props) {
   return (
     <>
       <div className={`drawer-backdrop ${open ? 'is-open' : ''}`} onClick={onClose} aria-hidden="true" />
@@ -25,7 +58,7 @@ export function Sidebar({ current, visited, open, visitorName, onSelect, onClose
           </button>
         </div>
         <nav className="chapter-nav">
-          <ol>
+          <ul>
             {SCENES.map((s, i) => {
               const Icon = SCENE_ICONS[s.id]
               const active = i === current
@@ -33,28 +66,36 @@ export function Sidebar({ current, visited, open, visitorName, onSelect, onClose
                 <li key={s.id}>
                   <button
                     className={`nav-item ${active ? 'is-active' : ''} ${visited.includes(s.number) ? 'is-visited' : ''}`}
-                    aria-current={active ? 'step' : undefined}
+                    aria-current={active ? 'page' : undefined}
                     onClick={() => onSelect(i)}
+                    title={s.navLabel}
                   >
-                    <Icon size={20} aria-hidden="true" />
+                    <Icon size={19} aria-hidden="true" />
                     <span className="nav-label">{s.navLabel}</span>
-                    <span className="nav-num">{String(s.number).padStart(2, '0')}</span>
                   </button>
                 </li>
               )
             })}
-          </ol>
+            <li>
+              <button className="nav-item" onClick={onAbout} title="About">
+                <Info size={19} aria-hidden="true" />
+                <span className="nav-label">About</span>
+              </button>
+            </li>
+          </ul>
         </nav>
+        <QuickTip />
         <div className="sidebar-foot">
+          <p className="script-line">
+            Small actions make a big impact <Leaf size={15} aria-hidden="true" />
+          </p>
           <div className="signed-in">
             <span className="signed-dot" aria-hidden="true" />
-            <span>
-              Signed in as <strong>{visitorName}</strong>
-            </span>
+            <span className="signed-name">{visitorName}</span>
+            <button className="icon-btn tiny" onClick={onSignOut} aria-label="Sign out" title="Sign out">
+              <LogOut size={15} />
+            </button>
           </div>
-          <button className="link-btn" onClick={onSignOut}>
-            <LogOut size={16} aria-hidden="true" /> Sign out
-          </button>
         </div>
       </aside>
     </>

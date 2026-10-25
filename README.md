@@ -7,14 +7,16 @@ School project (French class, 2AS). All site content is in English.
 
 ## What is inside
 
-- **8 full-screen scenes**, no page scrolling: Opening, The Cost of Waste, Food, Water, Energy, a decision game, a quiz, and Take Action.
-- **Video-style control bar**: play/pause the guided presentation, previous/next, a clickable chapter timeline, elapsed time, replay, mute and full screen.
-- **Voice-over** recorded with **Speko** (ElevenLabs voice through the Speko API), stored in `public/audio/scene-1.mp3` … `scene-8.mp3`. Captions follow the narration. If an audio file cannot play, the site falls back to the browser's speech synthesis, then to captions only.
-- **Interactive parts**: Smart Kitchen before/after comparison, water and energy hotspots, Water Habit Challenge, wasteful vs. smarter energy routine, a 5-situation decision game, a 6-question quiz, and a commitment checklist.
-- **Sign-in and access log**: visitors sign in with their name, role (teacher / student / visitor) and an access code. The site records when they signed in, which chapters they opened, how long they stayed and their quiz score. The project team opens the log at `#/log` with a separate log code.
-- Keyboard: `←` `→` change scene, `Space` play/pause, `M` mute, `C` captions, `F` full screen, `Esc` closes panels. Touch: swipe left/right.
-- Progress (current scene, commitments, best scores) is saved in the browser with `localStorage`, and can be reset in Settings.
-- Respects `prefers-reduced-motion`, with a manual "Reduce motion" switch.
+- **One screen, no scrolling**: a dashboard with a sidebar, a search bar, a large cinematic hero, an "Our Planet Today" / "Key Facts" panel, seven topic cards and a video-style player bar. Choosing a topic changes the content inside the same screen.
+- **A 10-minute guided tour** in 8 chapters: Introduction, Food, Water, Energy, Reduce & Recycle, Mini Game, Quiz and Take Action. The full narration lasts exactly 10:00.
+- **Voice-over** recorded with **Speko** (ElevenLabs voice through the Speko API), stored in `public/audio/scene-1.mp3` … `scene-8.mp3`. Captions follow the narration, and the facts panel and the "Practical action" carousel light up when the voice reaches them. If an audio file cannot play, the site falls back to the browser's speech synthesis, then to captions only. Sound only starts after the visitor presses play.
+- **Player bar**: play/pause, a draggable 10-minute timeline with chapter markers (also keyboard-controllable), elapsed time, sound, captions, settings, full screen, "Scene x/8" and previous/next chapter.
+- **Interactive parts**: search (chapters, tips, facts, game and quiz), a practical-action carousel per topic, a 5-situation mini game, a 6-question quiz, a "Build My Plan" overlay that generates a personal plan, and a dismissible Quick Tip card.
+- **Photos** generated with AI through the **Figma** connector (`public/images/`). The workflow `.github/workflows/fetch-images.yml` downloads the generated images listed in `scripts/image-sources.json` and commits them, because the generator's links expire after 7 days.
+- **Sign-in and access log**: visitors sign in with their name, role (teacher / student / visitor) and an access code. The site records when they signed in, which chapters they opened, how long they stayed and their quiz score. The project team opens the log at `#/log` (also linked from About) with a separate log code.
+- **Responsive**: designed for 1920×1080, 1536×960, 1366×768, 1280×720, 1024×768 (compact sidebar), 768×1024 (stacked panels), and phones (390×844, 320×568, 844×390), where Watch / Facts / Explore tabs show one section at a time.
+- Keyboard: `←` `→` change chapter, `Space` play/pause, `/` search, `M` sound, `C` captions, `F` full screen, `Esc` closes panels.
+- Progress (chapter, plan, best scores) is saved in the browser with `localStorage` and can be reset in Settings. Respects `prefers-reduced-motion`, with a manual "Reduce motion" switch.
 
 ## Run it
 
@@ -52,7 +54,7 @@ insert into public.app_config values ('access_code', extensions.crypt('NEW-CODE'
 
 ## Images
 
-Scene backdrops are drawn in code (SVG) so the site works offline and has no licensing issues. To use photos instead, put them in `public/images/` and list them in `src/data/media.ts`, for example `food: 'images/food.jpg'`.
+The nine photos in `public/images/` were generated for this project with AI (Figma image generation). To replace one, keep the same file name (`hero`, `food`, `water`, `energy`, `recycle`, `game`, `quiz`, `mountain`, `problem`) or update `scripts/image-sources.json` with new image links: the "Fetch generated images" workflow downloads them and commits the JPEGs.
 
 ## Sources
 
@@ -63,18 +65,19 @@ Figures are shown with their source in the site's Sources panel:
 - IEA, energy efficiency and electricity generation.
 - FAO, food loss and waste platform.
 
-The energy routine comparison is labelled as an illustrative example, not measured data.
+The quick tips and practical actions are general advice and contain no invented statistics.
 
 ## Project structure
 
 ```
 src/
-  components/   App shell: sidebar, top bar, control bar, modal, scene art, login, access log
-  scenes/       The 8 scenes
-  data/         Scene list and narration, educational content, quiz, game, sources
-  hooks/        Guided playback (clock, Speko audio, speech fallback, captions)
-  lib/          Visit-log client, storage helpers, config
-  styles/       base, layout, scenes
-public/audio/   Speko narration
+  components/   Shell: sidebar, top bar + search, side panel, cards, player bar, plan overlay, login, access log
+  scenes/       Hero content: home, topic (food/water/energy/reuse), game, quiz, take action
+  data/         Chapters and narration, facts, tips, quiz, game, sources
+  hooks/        Guided playback (clock, Speko audio, seeking, speech fallback, captions)
+  lib/          Visit-log client, storage helpers, plan summary, config
+  styles/       base, dashboard (layout + responsive), auth
+public/audio/   Speko narration (10:00 in total)
+public/images/  AI-generated photos
 supabase/       Database schema
 ```

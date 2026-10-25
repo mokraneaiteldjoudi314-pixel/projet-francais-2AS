@@ -3,7 +3,6 @@ import { useState, type FormEvent } from 'react'
 import { SCENES } from '../data/scenes'
 import { getVisits, InvalidCodeError, type Visit } from '../lib/visitLog'
 import { Logo } from './Logo'
-import { SceneArt } from './SceneArt'
 
 const PAGE = 6
 
@@ -53,7 +52,7 @@ export function AccessLog({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="login">
-      <SceneArt scene="quiz" className="login-art" />
+      <div className="login-art photo-bg" style={{ backgroundImage: 'url(images/mountain.jpg)' }} aria-hidden="true" />
       <div className="log-wrap">
         <header className="log-head">
           <Logo />

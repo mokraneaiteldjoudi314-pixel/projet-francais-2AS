@@ -1,0 +1,35 @@
+# Downloads AI-generated images listed in scripts/image-sources.json into
+# public/images as optimised JPEGs and commits them back to the branch.
+name: Fetch generated images
+
+on:
+  push:
+    paths:
+      - scripts/image-sources.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and convert
+        run: |
+          sudo apt-get -qq update && sudo apt-get -qq install -y imagemagick jq > /dev/null
+          mkdir -p public/images
+          for name in $(jq -r 'keys[]' scripts/image-sources.json); do
+            url=$(jq -r --arg n "$name" '.[$n]' scripts/image-sources.json)
+            curl -fsSL -o "/tmp/$name.png" "$url"
+            convert "/tmp/$name.png" -resize '1600x>' -strip -quality 82 "public/images/$name.jpg"
+            echo "$name: $(du -h public/images/$name.jpg | cut -f1)"
+          done
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898729+github-actions[bot]@users.noreply.github.com"
+          git add public/images
+          git diff --cached --quiet || git commit -m "Add generated images"
+          git push
