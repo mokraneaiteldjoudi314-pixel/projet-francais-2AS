@@ -1,0 +1,11 @@
+{
+  "hero": "https://www.figma.com/api/mcp/asset/ff84b980-829c-43a0-b9e9-d4997bb0019c.png",
+  "food": "https://www.figma.com/api/mcp/asset/f9a0bacc-9795-4b42-b9b5-5365bff2cf53.png",
+  "water": "https://www.figma.com/api/mcp/asset/6c9c78a9-1f24-4555-8bc8-677f8899cb59.png",
+  "energy": "https://www.figma.com/api/mcp/asset/cdb86ece-c22c-4afc-a651-ee058174d87c.png",
+  "recycle": "https://www.figma.com/api/mcp/asset/7cbc3d54-dd9c-4c56-be0b-8aa0f7ec8616.png",
+  "game": "https://www.figma.com/api/mcp/asset/45091772-a27e-481d-a7d1-0403b7e457fa.png",
+  "quiz": "https://www.figma.com/api/mcp/asset/b8fb5a77-b6e6-4a8c-ba91-7679b4131203.png",
+  "mountain": "https://www.figma.com/api/mcp/asset/99bafc52-15c9-40f1-8020-a7f1769bbd52.png",
+  "problem": "https://www.figma.com/api/mcp/asset/ad4d5f13-fdb3-49af-ac8b-a60ecdf4dee9.png"
+}
