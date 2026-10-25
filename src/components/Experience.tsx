@@ -1,39 +1,29 @@
-import { ExternalLink, RotateCcw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type TouchEvent } from 'react'
+import { BookOpen, ExternalLink, LayoutGrid, ListChecks, MonitorPlay, RotateCcw } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { SOURCES } from '../data/content'
-import { SCENES } from '../data/scenes'
+import { SCENES, SCENE_STARTS, TOTAL_DURATION } from '../data/scenes'
 import { captionAt, useGuidedPlayback } from '../hooks/useGuidedPlayback'
 import { KEYS, load, remove, save } from '../lib/storage'
 import { touchVisit } from '../lib/visitLog'
 import { ActionScene } from '../scenes/ActionScene'
-import { ChoicesScene } from '../scenes/ChoicesScene'
-import { EnergyScene } from '../scenes/EnergyScene'
-import { FoodScene } from '../scenes/FoodScene'
+import { GameScene } from '../scenes/GameScene'
 import { HomeScene } from '../scenes/HomeScene'
-import { ProblemScene } from '../scenes/ProblemScene'
 import { QuizScene } from '../scenes/QuizScene'
+import { TopicScene } from '../scenes/TopicScene'
 import { EMPTY_PROGRESS, type Progress, type SceneProps } from '../scenes/types'
-import { WaterScene } from '../scenes/WaterScene'
 import { CaptionsLine } from './Captions'
-import { ControlBar } from './ControlBar'
-import { SCENE_ICONS } from './icons'
+import { CardGrid } from './CardGrid'
 import type { Session } from './LoginScreen'
 import { Modal } from './Modal'
+import { PlanModal } from './PlanModal'
+import { PlaybackBar } from './PlaybackBar'
+import { SidePanel } from './SidePanel'
 import { Sidebar } from './Sidebar'
-import { TopBar } from './TopBar'
+import { TopBar, type SearchHit } from './TopBar'
 
-const COMPONENTS: ComponentType<SceneProps>[] = [HomeScene, ProblemScene, FoodScene, WaterScene, EnergyScene, ChoicesScene, QuizScene, ActionScene]
+const COMPONENTS: ComponentType<SceneProps>[] = [HomeScene, TopicScene, TopicScene, TopicScene, TopicScene, GameScene, QuizScene, ActionScene]
 
-const TOPIC_BLURBS = [
-  'The opening: why small choices matter.',
-  'What waste really costs, with sources.',
-  'Plan, store and use food wisely. Try the Smart Kitchen.',
-  'Water-smart habits and the Water Habit Challenge.',
-  'Compare a wasteful and a smarter energy routine.',
-  'A five-step game about everyday decisions.',
-  'Six questions to test what you learned.',
-  'Choose your commitments for home, school and community.',
-]
+type Tab = 'watch' | 'facts' | 'explore'
 
 interface Prefs {
   soundOn: boolean
@@ -56,11 +46,14 @@ export function Experience({ session, onSignOut }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(() => ({ soundOn: true, captionsOn: true, reduceMotion: false, ...load<Partial<Prefs>>(KEYS.prefs, {}) }))
   const [playing, setPlaying] = useState(false)
   const [pausedByUser, setPausedByUser] = useState(false)
-  const [direction, setDirection] = useState<1 | -1>(1)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [modal, setModal] = useState<'sources' | 'topics' | 'settings' | null>(null)
+  const [modal, setModal] = useState<'about' | 'settings' | 'plan' | null>(null)
+  const [tab, setTab] = useState<Tab>('watch')
   const [fullscreen, setFullscreen] = useState(false)
   const [resetCount, setResetCount] = useState(0)
+  const [focusTip, setFocusTip] = useState<{ scene: number; tip: number } | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const pendingSeek = useRef<number | null>(null)
 
   const current = Math.min(Math.max(progress.scene, 0), SCENES.length - 1)
   const scene = SCENES[current]
@@ -74,8 +67,9 @@ export function Experience({ session, onSignOut }: Props) {
     (index: number) => {
       const i = Math.min(Math.max(index, 0), SCENES.length - 1)
       setMenuOpen(false)
+      setTab('watch')
       if (i === current) return
-      setDirection(i > current ? 1 : -1)
+      setFocusTip(null)
       const n = SCENES[i].number
       setProgress((p) => ({ ...p, scene: i, visited: p.visited.includes(n) ? p.visited : [...p.visited, n] }))
     },
@@ -90,7 +84,32 @@ export function Experience({ session, onSignOut }: Props) {
     else setPlaying(false)
   }, [scene.interactive, current, goTo])
 
-  const { elapsed, mode, restart: restartNarration } = useGuidedPlayback({ scene, playing, soundOn: prefs.soundOn, onComplete })
+  const { elapsed, mode, restart: restartNarration, seek } = useGuidedPlayback({ scene, playing, soundOn: prefs.soundOn, onComplete })
+
+  // A seek into another chapter lands once that chapter is loaded.
+  useEffect(() => {
+    if (pendingSeek.current === null) return
+    const t = pendingSeek.current
+    pendingSeek.current = null
+    seek(t)
+  }, [seek])
+
+  const seekGlobal = useCallback(
+    (t: number) => {
+      const clamped = Math.min(Math.max(t, 0), TOTAL_DURATION - 0.1)
+      let i = 0
+      SCENE_STARTS.forEach((s, k) => {
+        if (clamped >= s) i = k
+      })
+      const offset = clamped - SCENE_STARTS[i]
+      if (i === current) seek(offset)
+      else {
+        pendingSeek.current = offset
+        goTo(i)
+      }
+    },
+    [current, seek, goTo],
+  )
 
   const togglePlay = useCallback(() => {
     setPlaying((p) => {
@@ -100,18 +119,10 @@ export function Experience({ session, onSignOut }: Props) {
   }, [])
 
   const start = useCallback(() => {
-    goTo(1)
+    restartNarration()
     setPausedByUser(false)
     setPlaying(true)
-  }, [goTo])
-
-  const restartExperience = useCallback(() => {
-    setProgress((p) => ({ ...EMPTY_PROGRESS, visited: p.visited, quizBest: p.quizBest, gameBest: p.gameBest }))
-    setDirection(-1)
-    setPlaying(false)
-    setPausedByUser(false)
-    setResetCount((n) => n + 1)
-  }, [])
+  }, [restartNarration])
 
   const resetProgress = useCallback(() => {
     remove(KEYS.progress)
@@ -186,11 +197,14 @@ export function Experience({ session, onSignOut }: Props) {
         return
       }
       if (modal || isTyping(e.target) || e.altKey || e.ctrlKey || e.metaKey) return
-      if (e.key === 'ArrowRight') next()
+      const t = e.target as HTMLElement | null
+      if (e.key === '/') {
+        e.preventDefault()
+        searchRef.current?.focus()
+      } else if (e.key === 'ArrowRight') next()
       else if (e.key === 'ArrowLeft') prev()
       else if (e.key === ' ' || e.code === 'Space') {
-        const t = e.target as HTMLElement | null
-        if (t && (t.tagName === 'BUTTON' || t.getAttribute('role') === 'radio' || t.getAttribute('role') === 'checkbox')) return
+        if (t && (t.tagName === 'BUTTON' || t.getAttribute('role') === 'slider')) return
         e.preventDefault()
         togglePlay()
       } else if (e.key === 'm' || e.key === 'M') setPrefs((p) => ({ ...p, soundOn: !p.soundOn }))
@@ -201,42 +215,37 @@ export function Experience({ session, onSignOut }: Props) {
     return () => window.removeEventListener('keydown', onKey)
   }, [modal, menuOpen, next, prev, togglePlay, toggleFullscreen])
 
-  // ---- Touch swipe between scenes (outside interactive controls) ----
-  const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const onTouchStart = (e: TouchEvent) => {
-    const t = e.touches[0]
-    touchStart.current = { x: t.clientX, y: t.clientY }
-  }
-  const onTouchEnd = (e: TouchEvent) => {
-    const s = touchStart.current
-    touchStart.current = null
-    if (!s || (e.target as HTMLElement).closest('input, .compare')) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - s.x
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(t.clientY - s.y) * 1.5) (dx < 0 ? next : prev)()
-  }
+  const onSearchPick = useCallback(
+    (hit: SearchHit) => {
+      goTo(hit.scene)
+      if (hit.tip !== null) setFocusTip({ scene: hit.scene, tip: hit.tip })
+    },
+    [goTo],
+  )
 
-  const caption = playing || elapsed > 0 ? captionAt(scene.narration, scene.duration, elapsed) : ''
+  const caption = playing || elapsed > 0 ? captionAt(scene.narration, scene.duration, Math.min(elapsed, scene.duration - 0.01)) : ''
   const narrationNote = mode === 'speech' ? 'Browser voice' : mode === 'silent' ? 'Captions only' : null
+  const tip = focusTip && focusTip.scene === current ? focusTip.tip : null
 
   const SceneComponent = COMPONENTS[current]
   const sceneProps: SceneProps = useMemo(
     () => ({
-      active: true,
+      scene,
+      elapsed,
       progress,
       goTo,
       next,
       start,
       update,
       onQuizDone,
-      openSources: () => setModal('sources'),
-      openTopics: () => setModal('topics'),
-      restart: restartExperience,
+      openPlan: () => setModal('plan'),
+      openSources: () => setModal('about'),
+      focusTip: tip,
     }),
-    [progress, goTo, next, start, update, onQuizDone, restartExperience],
+    [scene, elapsed, progress, goTo, next, start, update, onQuizDone, tip],
   )
 
-  const classes = ['app', pausedByUser && !playing ? 'is-paused' : '', prefs.reduceMotion ? 'reduce-motion' : '', playing ? 'is-playing' : '', prefs.captionsOn ? 'captions-on' : ''].join(' ')
+  const classes = ['app', pausedByUser && !playing ? 'is-paused' : '', prefs.reduceMotion ? 'reduce-motion' : '', playing ? 'is-playing' : '', `scene-${scene.id}`].join(' ')
 
   return (
     <div className={classes}>
@@ -247,49 +256,79 @@ export function Experience({ session, onSignOut }: Props) {
         visitorName={session.name}
         onSelect={goTo}
         onClose={() => setMenuOpen(false)}
+        onAbout={() => {
+          setMenuOpen(false)
+          setModal('about')
+        }}
         onSignOut={onSignOut}
       />
       <main className="main">
         <TopBar
-          current={current}
           soundOn={prefs.soundOn}
-          captionsOn={prefs.captionsOn}
           onToggleSound={() => setPrefs((p) => ({ ...p, soundOn: !p.soundOn }))}
-          onToggleCaptions={() => setPrefs((p) => ({ ...p, captionsOn: !p.captionsOn }))}
           onOpenSettings={() => setModal('settings')}
           onOpenMenu={() => setMenuOpen(true)}
-          onSelect={goTo}
+          onPick={onSearchPick}
+          searchRef={searchRef}
         />
-        <section className="stage" aria-live="polite" aria-label={`Scene ${scene.number} of ${SCENES.length}: ${scene.chapter}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div key={`${scene.id}-${resetCount}`} className={`scene-wrap enter-${direction > 0 ? 'next' : 'prev'}`}>
-            <SceneComponent {...sceneProps} />
+        <div className={`dash tab-${tab}`}>
+          <section className="stage" aria-label={`Scene ${scene.number} of ${SCENES.length}: ${scene.chapter}`}>
+            <div key={`${scene.id}-${resetCount}-${tip ?? ''}`} className="scene-wrap">
+              <SceneComponent {...sceneProps} />
+            </div>
+            <CaptionsLine text={caption} visible={prefs.captionsOn} />
+            {playing && <span className="live-dot" aria-hidden="true" />}
+          </section>
+          <div className="side-area">
+            <SidePanel scene={scene} elapsed={elapsed} progress={progress} openSources={() => setModal('about')} openPlan={() => setModal('plan')} />
           </div>
-          <CaptionsLine text={caption} visible={prefs.captionsOn} />
-        </section>
-        <ControlBar
+          <div className="cards-area">
+            <CardGrid current={scene.id} visited={progress.visited} onOpen={goTo} />
+          </div>
+        </div>
+        <nav className="mobile-tabs" aria-label="Sections">
+          {(
+            [
+              ['watch', 'Watch', MonitorPlay],
+              ['facts', scene.id === 'home' ? 'Planet' : scene.id === 'action' ? 'My plan' : 'Facts', ListChecks],
+              ['explore', 'Explore', LayoutGrid],
+            ] as const
+          ).map(([id, label, Icon]) => (
+            <button key={id} className={tab === id ? 'is-on' : ''} aria-pressed={tab === id} onClick={() => setTab(id)}>
+              <Icon size={17} aria-hidden="true" /> {label}
+            </button>
+          ))}
+        </nav>
+        <PlaybackBar
           current={current}
           elapsed={elapsed}
           playing={playing}
           soundOn={prefs.soundOn}
+          captionsOn={prefs.captionsOn}
           fullscreen={fullscreen}
           fullscreenSupported={fullscreenSupported}
           narrationNote={narrationNote}
           onTogglePlay={togglePlay}
           onPrev={prev}
           onNext={next}
-          onSelect={goTo}
-          onReplay={() => {
-            restartNarration()
-            setPausedByUser(false)
-            setPlaying(true)
-          }}
+          onSeek={seekGlobal}
           onToggleSound={() => setPrefs((p) => ({ ...p, soundOn: !p.soundOn }))}
+          onToggleCaptions={() => setPrefs((p) => ({ ...p, captionsOn: !p.captionsOn }))}
+          onOpenSettings={() => setModal('settings')}
           onToggleFullscreen={toggleFullscreen}
         />
       </main>
 
-      <Modal title="Sources" open={modal === 'sources'} onClose={() => setModal(null)}>
-        <p className="muted">Figures in this experience come from these organisations. Comparisons marked “illustrative” are examples, not measurements.</p>
+      <PlanModal open={modal === 'plan'} selected={progress.commitments} onChange={(ids) => update({ commitments: ids })} onClose={() => setModal(null)} />
+
+      <Modal title="About this project" open={modal === 'about'} onClose={() => setModal(null)} wide>
+        <p>
+          <strong>Waste Less, Live Better</strong> is a school project: a 10-minute guided documentary about food, water, energy and waste, with a mini game, a quiz
+          and a personal action plan.
+        </p>
+        <h3 className="modal-sub">
+          <BookOpen size={16} aria-hidden="true" /> Sources for the figures
+        </h3>
         <ul className="source-list">
           {SOURCES.map((s) => (
             <li key={s.id}>
@@ -299,34 +338,14 @@ export function Experience({ session, onSignOut }: Props) {
             </li>
           ))}
         </ul>
-        <p className="muted small">Sustainable choices depend on local circumstances and access to resources.</p>
-      </Modal>
-
-      <Modal title="Explore the Topics" open={modal === 'topics'} onClose={() => setModal(null)} wide>
-        <ul className="topic-grid">
-          {SCENES.map((s, i) => {
-            const Icon = SCENE_ICONS[s.id]
-            return (
-              <li key={s.id}>
-                <button
-                  className={`topic-tile ${progress.visited.includes(s.number) ? 'is-visited' : ''}`}
-                  onClick={() => {
-                    goTo(i)
-                    setModal(null)
-                  }}
-                >
-                  <Icon size={20} aria-hidden="true" />
-                  <span>
-                    <strong>
-                      {String(s.number).padStart(2, '0')} · {s.chapter}
-                    </strong>
-                    <small>{TOPIC_BLURBS[i]}</small>
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <p className="muted small">
+          Photos were generated with AI (Figma) for illustration. The voice-over was recorded with Speko. Tips are general advice: sustainable choices depend on local circumstances.
+        </p>
+        <div className="btn-row end">
+          <a className="btn btn-ghost btn-small" href="#/log">
+            <ListChecks size={16} aria-hidden="true" /> Open the access log
+          </a>
+        </div>
       </Modal>
 
       <Modal title="Settings" open={modal === 'settings'} onClose={() => setModal(null)}>
@@ -365,7 +384,7 @@ export function Experience({ session, onSignOut }: Props) {
               <RotateCcw size={16} aria-hidden="true" /> Reset my progress
             </button>
           </div>
-          <p className="muted small">Shortcuts: ← → change scene · Space play/pause · F full screen · Esc close.</p>
+          <p className="muted small">Shortcuts: ← → change chapter · Space play/pause · / search · M sound · C captions · F full screen · Esc close.</p>
         </div>
       </Modal>
     </div>

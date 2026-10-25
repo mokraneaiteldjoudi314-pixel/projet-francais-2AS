@@ -2,7 +2,6 @@ import { ArrowRight, KeyRound, ListChecks, Loader2, ShieldCheck } from 'lucide-r
 import { useState, type FormEvent } from 'react'
 import { InvalidCodeError, startVisit, type Role } from '../lib/visitLog'
 import { Logo } from './Logo'
-import { SceneArt } from './SceneArt'
 
 export interface Session {
   visitId: string | null
@@ -54,7 +53,7 @@ export function LoginScreen({ onSignedIn, onOpenLog }: Props) {
 
   return (
     <div className="login">
-      <SceneArt scene="home" className="login-art" />
+      <div className="login-art photo-bg" style={{ backgroundImage: 'url(images/hero.jpg)' }} aria-hidden="true" />
       <div className="login-grid">
         <section className="login-intro">
           <Logo />

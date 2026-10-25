@@ -32,177 +32,153 @@ export const SOURCES: Source[] = [
   },
 ]
 
-export interface ProblemPanel {
-  id: 'food' | 'water' | 'energy'
-  title: string
-  lead: string
-  stat: string
-  statLabel: string
-  sourceId: string
-  detail: string[]
-}
+export type IconKey =
+  | 'food' | 'water' | 'energy' | 'globe' | 'list' | 'fridge' | 'label' | 'leftovers' | 'compost'
+  | 'tap' | 'shower' | 'leak' | 'washer' | 'rain' | 'school' | 'snow' | 'cloud' | 'drought'
+  | 'bulb' | 'plug' | 'thermo' | 'sun' | 'factory' | 'gauge' | 'wind'
+  | 'reduce' | 'bag' | 'reuse' | 'repair' | 'recycle' | 'sort' | 'box' | 'trash' | 'heart' | 'home' | 'users'
 
-export const PROBLEM_PANELS: ProblemPanel[] = [
-  {
-    id: 'food',
-    title: 'Food Waste',
-    lead: 'Food is thrown away while many people still lack reliable access to it.',
-    stat: '1.05 billion t',
-    statLabel: 'of food wasted in 2022, according to UNEP. About 60% of it came from households.',
-    sourceId: 'unep',
-    detail: [
-      'Wasting food also wastes the land, water and energy used to grow, transport and store it.',
-      'UNEP estimates that food loss and waste produce 8–10% of global greenhouse gas emissions.',
-    ],
-  },
-  {
-    id: 'water',
-    title: 'Water Waste',
-    lead: 'Fresh water is a limited and essential resource for people and nature.',
-    stat: '≈ 2.5%',
-    statLabel: 'of all water on Earth is fresh water, and most of it is frozen or underground (USGS).',
-    sourceId: 'usgs',
-    detail: [
-      'Treating and pumping clean water to our homes also uses energy.',
-      'Polluting rivers and lakes makes even less water safe to use.',
-    ],
-  },
-  {
-    id: 'energy',
-    title: 'Energy Waste',
-    lead: 'Energy we do not need still has to be produced, which increases demand and impact.',
-    stat: 'Most',
-    statLabel: 'of the world’s electricity is still generated from fossil fuels such as coal and gas (IEA).',
-    sourceId: 'iea',
-    detail: [
-      'The IEA calls energy efficiency a key way to cut costs and emissions at the same time.',
-      'Lights, devices, heating and cooling left on for no reason are everyday sources of waste.',
-    ],
-  },
-]
+export type Tone = 'orange' | 'blue' | 'yellow' | 'green' | 'purple'
 
-export const FOOD_ACTIONS = [
-  { title: 'Plan meals', text: 'Check what you already have and shop with a list.' },
-  { title: 'Store food well', text: 'Keep the fridge cold and put older food at the front.' },
-  { title: 'Read date labels', text: '“Use by” is about safety. “Best before” is about quality.' },
-  { title: 'Use leftovers safely', text: 'Cool, cover and refrigerate them, then eat them soon.' },
-  { title: 'Share surplus', text: 'Donate suitable food where local rules allow it.' },
-  { title: 'Compost scraps', text: 'Turn peels and scraps into soil when you can.' },
-]
-
-export interface Habit {
-  id: string
-  habit: string
-  problem: string
-  tip: string
-}
-
-export const KITCHEN_HABITS: Habit[] = [
-  {
-    id: 'too-much',
-    habit: 'Buying too much',
-    problem: 'Extra food goes off before anyone can eat it.',
-    tip: 'Check the fridge and cupboards first, plan a few meals, and shop with a list. Buy loose fruit and vegetables when you only need a few.',
-  },
-  {
-    id: 'leftovers',
-    habit: 'Forgetting leftovers',
-    problem: 'Leftovers hide at the back of the fridge until they spoil.',
-    tip: 'Put leftovers in clear, covered containers at the front of the fridge, note the date, and eat them within a day or two. When unsure, follow local food-safety advice.',
-  },
-  {
-    id: 'storage',
-    habit: 'Storing food incorrectly',
-    problem: 'Food spoils faster when it is too warm or badly wrapped.',
-    tip: 'Keep the fridge at 5 °C or below, as food-safety agencies commonly advise. Seal opened food, and keep raw meat on the lowest shelf.',
-  },
-  {
-    id: 'labels',
-    habit: 'Misreading date labels',
-    problem: 'Good food is thrown away just because a date has passed.',
-    tip: 'Never eat food after its “use by” date. After a “best before” date, food is often still fine: look, smell and check before deciding.',
-  },
-  {
-    id: 'portions',
-    habit: 'Cooking too much',
-    problem: 'Big portions end up on the plate and then in the bin.',
-    tip: 'Cook portions that match how many people are eating. Freeze extra portions quickly to enjoy another day.',
-  },
-]
-
-export interface Hotspot {
-  id: string
+export interface Stat {
+  icon: IconKey
+  tone: Tone
   label: string
+  value: string
+  text: string
+  sourceId: string
+}
+
+/** "Our Planet Today": only sourced figures (see the About panel for the links). */
+export const PLANET_STATS: Stat[] = [
+  { icon: 'food', tone: 'orange', label: 'Food waste', value: '1.05 billion t', text: 'of food wasted in 2022', sourceId: 'unep' },
+  { icon: 'water', tone: 'blue', label: 'Fresh water', value: '≈ 2.5%', text: 'of Earth’s water is fresh', sourceId: 'usgs' },
+  { icon: 'energy', tone: 'yellow', label: 'Electricity', value: 'Mostly fossil', text: 'coal and gas still lead', sourceId: 'iea' },
+  { icon: 'globe', tone: 'green', label: 'Global impact', value: '8–10%', text: 'of greenhouse gases come from food loss and waste', sourceId: 'unep' },
+]
+
+export interface Cue {
+  icon: IconKey
   title: string
   text: string
-  x: number
-  y: number
+  /** Words from the narration: the item lights up when the voice reaches them. */
+  cue: string
 }
 
-export const WATER_HOTSPOTS: Hotspot[] = [
-  { id: 'tap', label: 'Tap', title: 'Turn off the tap', text: 'Turn off the tap while you brush your teeth or soap your hands.', x: 14, y: 22 },
-  { id: 'leak', label: 'Leak', title: 'Fix leaking taps', text: 'A dripping tap wastes water all day long. Report or repair leaks quickly.', x: 34, y: 70 },
-  { id: 'wash', label: 'Washing', title: 'Wash efficiently', text: 'Run washing machines and dishwashers with full loads, using eco settings when available.', x: 52, y: 30 },
-  { id: 'plants', label: 'Plants', title: 'Water plants thoughtfully', text: 'Water in the cool morning or evening and use a watering can instead of a running hose.', x: 72, y: 74 },
-  { id: 'river', label: 'River', title: 'Keep waterways clean', text: 'Never pour oil, paint or chemicals down drains. They can end up in rivers and lakes.', x: 84, y: 26 },
-]
-
-export interface HabitChoice {
-  id: string
-  situation: string
-  wasteful: string
-  smart: string
-  feedback: string
+export interface Topic {
+  eyebrow: string
+  title: string
+  accent: string
+  lead: string
+  image: string
+  tone: Tone
+  fact: { value: string; text: string; sourceId?: string }
+  facts: Cue[]
+  tips: Cue[]
 }
 
-export const WATER_CHALLENGE: HabitChoice[] = [
-  {
-    id: 'brush',
-    situation: 'Brushing your teeth',
-    wasteful: 'Leave the tap running',
-    smart: 'Turn the tap off',
-    feedback: 'Water only needs to run when you rinse.',
+export const TOPICS: Record<'food' | 'water' | 'energy' | 'reuse', Topic> = {
+  food: {
+    eyebrow: 'Chapter 02 · Food',
+    title: 'Eat smart.',
+    accent: 'Waste less.',
+    lead: 'Plan, store and cook wisely: every meal is a chance to make a difference.',
+    image: 'images/food.jpg',
+    tone: 'orange',
+    fact: { value: '≈ 60%', text: 'of wasted food is thrown away at home', sourceId: 'unep' },
+    facts: [
+      { icon: 'trash', title: '1.05 billion tonnes', text: 'of food were wasted in 2022 (UNEP).', cue: 'According to the United Nations' },
+      { icon: 'home', title: 'Mostly at home', text: 'About 60% of it came from households.', cue: 'here is the surprising part' },
+      { icon: 'water', title: 'Hidden costs', text: 'Water, energy, work and land are lost too.', cue: 'We also waste the water' },
+      { icon: 'cloud', title: 'Warming gases', text: 'Food loss and waste: 8–10% of emissions (UNEP).', cue: 'when food rots' },
+    ],
+    tips: [
+      { icon: 'list', title: 'Plan your meals', text: 'Check what you already have, write a list, and buy only what you need.', cue: 'First, plan your meals' },
+      { icon: 'fridge', title: 'Store food well', text: 'Older products to the front of the fridge; freeze bread and fruit before they go bad.', cue: 'Second, store food' },
+      { icon: 'label', title: 'Read the labels', text: '“Use by” is about safety. “Best before” is about quality: look, smell and taste.', cue: 'Third, understand the labels' },
+      { icon: 'leftovers', title: 'Love leftovers', text: 'Cook the right portions and turn leftovers into soups, salads or sandwiches.', cue: 'Fourth, cook the right portions' },
+      { icon: 'compost', title: 'Compost scraps', text: 'Peels and coffee grounds belong in the compost, not in the bin.', cue: 'Finally, if something' },
+    ],
   },
-  {
-    id: 'shower',
-    situation: 'Taking a shower',
-    wasteful: 'Stay in for a long time',
-    smart: 'Keep it short',
-    feedback: 'A shorter shower saves water and the energy used to heat it.',
+  water: {
+    eyebrow: 'Chapter 03 · Water',
+    title: 'Every drop',
+    accent: 'counts.',
+    lead: 'Fresh water is rare and precious. Simple habits keep it flowing for everyone.',
+    image: 'images/water.jpg',
+    tone: 'blue',
+    fact: { value: '≈ 2.5%', text: 'of all water on Earth is fresh water', sourceId: 'usgs' },
+    facts: [
+      { icon: 'water', title: 'Mostly salt water', text: 'Only about 2.5% of Earth’s water is fresh (USGS).', cue: 'But most of it is salt water' },
+      { icon: 'snow', title: 'Hard to reach', text: 'Most fresh water is frozen or deep underground.', cue: 'And most of that fresh water' },
+      { icon: 'box', title: 'In everything we use', text: 'Food, clothes and phones all need water to be made.', cue: 'Yet we need fresh water' },
+      { icon: 'drought', title: 'Droughts', text: 'Dry periods are becoming more frequent in many regions.', cue: 'In many regions' },
+    ],
+    tips: [
+      { icon: 'tap', title: 'Turn off the tap', text: 'While you brush your teeth, wash your hands or do the dishes.', cue: 'Turn off the tap while' },
+      { icon: 'shower', title: 'Shorter showers', text: 'Choose a short shower instead of a bath.', cue: 'Take shorter showers' },
+      { icon: 'leak', title: 'Fix leaks fast', text: 'A small drip, day and night, adds up to a lot of water.', cue: 'Fix leaking taps' },
+      { icon: 'washer', title: 'Full loads only', text: 'Run the washing machine and dishwasher only when full.', cue: 'Run the washing machine' },
+      { icon: 'rain', title: 'Use rainwater', text: 'Water plants with rainwater, in the evening when less evaporates.', cue: 'Collect rainwater' },
+      { icon: 'school', title: 'At school too', text: 'Report leaks and never leave a tap running.', cue: 'At school, report' },
+    ],
   },
-  {
-    id: 'dishes',
-    situation: 'Washing the dishes',
-    wasteful: 'Rinse each plate under a running tap',
-    smart: 'Fill a bowl or run a full dishwasher',
-    feedback: 'Washing in one go uses water more carefully.',
+  energy: {
+    eyebrow: 'Chapter 04 · Energy',
+    title: 'Use energy',
+    accent: 'wisely.',
+    lead: 'Every switch counts: efficiency saves money and protects the climate.',
+    image: 'images/energy.jpg',
+    tone: 'yellow',
+    fact: { value: 'Most', text: 'of the world’s electricity still comes from fossil fuels', sourceId: 'iea' },
+    facts: [
+      { icon: 'factory', title: 'Fossil power', text: 'Coal and gas still produce most of the world’s electricity.', cue: 'Today, most of the world' },
+      { icon: 'cloud', title: 'CO₂ and smog', text: 'Burning fuels heats the climate and pollutes the air.', cue: 'Burning them releases' },
+      { icon: 'gauge', title: 'Efficiency first', text: 'The IEA calls efficiency one of the fastest, cheapest fixes.', cue: 'The International Energy Agency' },
+      { icon: 'wind', title: 'Renewables', text: 'Sun and wind make electricity without burning fuel.', cue: 'when it is possible, choose renewable' },
+    ],
+    tips: [
+      { icon: 'bulb', title: 'Lights off', text: 'Switch off when you leave a room and use daylight whenever you can.', cue: 'Switch off the lights when' },
+      { icon: 'bulb', title: 'Choose LED', text: 'LED bulbs use much less electricity and last much longer.', cue: 'Replace old bulbs' },
+      { icon: 'plug', title: 'No standby', text: 'Turn devices off completely and unplug chargers.', cue: 'on standby' },
+      { icon: 'fridge', title: 'Fridge smart', text: 'Keep the door closed and let hot food cool before storing it.', cue: 'Keep the fridge door closed' },
+      { icon: 'thermo', title: 'Winter warmth', text: 'Close doors and curtains, and wear a jumper before turning the heating up.', cue: 'In winter' },
+      { icon: 'sun', title: 'Summer cool', text: 'Close the shutters in the hottest hours instead of cooling all day.', cue: 'In summer' },
+    ],
   },
-]
-
-export const ENERGY_HOTSPOTS: Hotspot[] = [
-  { id: 'lights', label: 'Lights', title: 'Switch off lights', text: 'Turn lights off when you leave a room or when daylight is enough.', x: 18, y: 56 },
-  { id: 'devices', label: 'Devices', title: 'Turn devices off', text: 'Switch off screens, consoles and chargers instead of leaving them on for no reason.', x: 40, y: 82 },
-  { id: 'daylight', label: 'Daylight', title: 'Use natural daylight', text: 'Open curtains and work near windows during the day.', x: 56, y: 36 },
-  { id: 'efficient', label: 'Efficient', title: 'Choose efficient equipment', text: 'LED bulbs and efficient appliances provide the same service with less energy.', x: 30, y: 22 },
-  { id: 'heating', label: 'Heating', title: 'Heat and cool sensibly', text: 'Close doors and windows when heating or cooling, and avoid extreme settings.', x: 72, y: 70 },
-  { id: 'renewable', label: 'Renewables', title: 'Learn about renewables', text: 'Solar and wind power produce electricity without burning fuel.', x: 84, y: 18 },
-]
-
-export interface RoutineStep {
-  time: string
-  wasteful: string
-  smart: string
-  /** Illustrative demand level from 1 (low) to 5 (high), not measured data. */
-  wastefulLevel: number
-  smartLevel: number
+  reuse: {
+    eyebrow: 'Chapter 05 · Reduce & Recycle',
+    title: 'Reduce, reuse,',
+    accent: 'recycle right.',
+    lead: 'The best waste is the waste we never create.',
+    image: 'images/recycle.jpg',
+    tone: 'green',
+    fact: { value: '3 Rs', text: 'reduce first, reuse often, recycle right' },
+    facts: [
+      { icon: 'box', title: 'Hidden footprint', text: 'Every object used raw materials, water and energy.', cue: 'Every object around us' },
+      { icon: 'reduce', title: 'The three Rs', text: 'Reduce, reuse, recycle: always in that order.', cue: 'That is why environmental' },
+      { icon: 'sort', title: 'Sort carefully', text: 'One wrong item can spoil a whole recycling bin.', cue: 'Empty and rinse' },
+      { icon: 'heart', title: 'Zero waste', text: 'The best waste is the waste we never create.', cue: 'Remember: the best waste' },
+    ],
+    tips: [
+      { icon: 'reduce', title: 'Reduce', text: 'Before buying, ask yourself: do I really need it?', cue: 'The first, and the most powerful' },
+      { icon: 'bag', title: 'Skip single-use', text: 'Less packaging, loose fruit, and no plastic bags, straws or cups.', cue: 'Choose products with less packaging' },
+      { icon: 'reuse', title: 'Reuse', text: 'Carry a bottle and a cloth bag; store food in glass jars.', cue: 'The second is reuse' },
+      { icon: 'repair', title: 'Repair & donate', text: 'Fix it, swap it or give it a second life.', cue: 'Repair a broken object' },
+      { icon: 'recycle', title: 'Recycle', text: 'Paper, plastic and metal, glass, and food scraps: each in its bin.', cue: 'The third is recycle' },
+    ],
+  },
 }
 
-export const ENERGY_ROUTINE: RoutineStep[] = [
-  { time: '07:00', wasteful: 'Every light on in the house', smart: 'Curtains open, one light where needed', wastefulLevel: 4, smartLevel: 2 },
-  { time: '08:00', wasteful: 'TV left on in an empty room', smart: 'Screens switched off before leaving', wastefulLevel: 3, smartLevel: 1 },
-  { time: '13:00', wasteful: 'Heating high with a window open', smart: 'Window closed, moderate setting', wastefulLevel: 5, smartLevel: 3 },
-  { time: '18:00', wasteful: 'Half-empty washing machine', smart: 'Full load on an eco setting', wastefulLevel: 4, smartLevel: 2 },
-  { time: '23:00', wasteful: 'Console and chargers left on all night', smart: 'Devices off, chargers unplugged', wastefulLevel: 3, smartLevel: 1 },
+export const QUICK_TIPS = [
+  'Freeze bread before it goes stale: toast it straight from the freezer.',
+  'A full dishwasher usually uses less water than washing the same dishes by hand under a running tap.',
+  'Put a “use me first” box in the fridge for food that needs eating soon.',
+  'Unplug chargers when your phone is full.',
+  'Carry a reusable bottle: refill it instead of buying a new one.',
+  'Open the curtains before you switch on a light.',
+  'Repair before you replace: many clothes only need a button or a stitch.',
+  'Water plants in the evening so less water evaporates.',
 ]
 
 export interface GameOption {
@@ -269,6 +245,8 @@ export const GAME_STEPS: GameStep[] = [
   },
 ]
 
+export const GAME_MAX = GAME_STEPS.reduce((n, s) => n + Math.max(...s.options.map((o) => o.points)), 0)
+
 export interface QuizQuestion {
   question: string
   answers: string[]
@@ -308,10 +286,10 @@ export const QUIZ: QuizQuestion[] = [
     explanation: 'Daylight is free. Lights only need to be on when it is not enough.',
   },
   {
-    question: 'Why does wasting food also waste water and energy?',
-    answers: ['It does not', 'Growing, transporting and storing food uses water and energy', 'Because bins need to be washed'],
+    question: 'Which of the three Rs should come first?',
+    answers: ['Recycle', 'Reduce', 'Reuse'],
     correct: 1,
-    explanation: 'Every wasted meal carries the resources that were used to produce it.',
+    explanation: 'The best waste is the waste we never create: reduce first, reuse often, recycle right.',
   },
 ]
 
@@ -338,5 +316,7 @@ export const COMMITMENTS = [
   { id: 'water', text: 'I will avoid wasting water.', short: 'save water' },
   { id: 'energy', text: 'I will switch off unused lights and devices.', short: 'switch off unused lights and devices' },
   { id: 'leftovers', text: 'I will use leftovers safely instead of throwing them away.', short: 'use leftovers' },
+  { id: 'reuse', text: 'I will carry a reusable bottle and bag.', short: 'carry a reusable bottle and bag' },
+  { id: 'sort', text: 'I will sort my waste correctly.', short: 'sort my waste correctly' },
   { id: 'encourage', text: 'I will encourage others without blaming them.', short: 'encourage others kindly' },
 ]
